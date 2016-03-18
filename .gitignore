@@ -11,6 +11,7 @@
 # Generated files
 bin/
 gen/
+lint-report/
 
 # Gradle files
 .gradle/
@@ -30,3 +31,7 @@ proguard/
 
 # Android Studio captures folder
 captures/
+
+# IntelliJ
+.idea/
+*.iml
