@@ -19,7 +19,7 @@ apply plugin: 'MTLintPlugin'
 
 # 功能介绍
 
-- 集成了原生lint和[自定义lint]()的所有检查规则
+- 集成了原生lint和[自定义lint](https://github.com/GavinCT/MeituanCustomLintDemo/tree/master/aar)的所有检查规则
 - 内置lintOptions （所有warning视为error，只输出htmlReport到`${project.projectDir}/lint-report/lint-report.html`)和 lint.xml。集成此插件后，原有配置会被覆盖，没有配置的也会执行插件中的配置
 - 根据retrolambda版本判断是否在lint.xml加入try-with-resource警告屏蔽（1.8.0版以上开始支持try-with-resource）
 
