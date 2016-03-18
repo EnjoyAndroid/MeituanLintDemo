@@ -25,6 +25,13 @@ apply plugin: 'MTLintPlugin'
 
 注： plugin新增一个task：lintForArchon，会选择一个variantName（取遍历结果的第一个）。
 
+# lint.xml配置
+
+plugin/src/main/resources/config/lint.xml
+
+retrolambda_lint.xml是针对retrolambda的特殊配置，识别到开发者使用retrolambda之后会将该规则与lint.xml合并。
+同样，有其他特殊情况，也可参照此例进行添加。
+
 # 注意
 
 ## 项目中使用了retrolambda
