@@ -136,6 +136,13 @@ def custom_lint(src):
     os.chdir(src)
     code = os.system('../gradlew lintForArchon --stacktrace')
 
+    # gradlew执行语法有问题
+    if code == 512:
+        exit(1)
+    # gradlew不存在
+    if code == 32512:
+        exit(1)
+
     os.system('git reset --hard')
 
     # 报错
