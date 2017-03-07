@@ -12,9 +12,14 @@ import com.android.tools.lint.detector.api.Severity;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import lombok.ast.AstVisitor;
+import lombok.ast.BinaryExpression;
 import lombok.ast.ConstructorInvocation;
+import lombok.ast.Expression;
+import lombok.ast.ExpressionStatement;
 import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.Node;
 import lombok.ast.StrictListAccessor;
@@ -65,7 +70,7 @@ public class HashMapForJDK7Detector extends Detector implements Detector.JavaSca
     private static final String HASH_MAP = "HashMap";                       //$NON-NLS-1$
 
     @Override
-    public AstVisitor createJavaVisitor(@NonNull JavaContext context) {
+    public AstVisitor createJavaVisitor(final @NonNull JavaContext context) {
         return new ForwardingAstVisitor() {
 
             @Override
@@ -99,14 +104,59 @@ public class HashMapForJDK7Detector extends Detector implements Detector.JavaSca
             map3.put(1, "name");
              */
 
-            Node variableDefinition = node.getParent().getParent();
-            if (variableDefinition instanceof VariableDefinition) {
-                TypeReference typeReference = ((VariableDefinition) variableDefinition).astTypeReference();
-                checkCore(context, variableDefinition, typeReference);
+            Node result = node.getParent().getParent();
+            if (result instanceof VariableDefinition) {
+                TypeReference typeReference = ((VariableDefinition) result).astTypeReference();
+                checkCore(context, result, typeReference);
+                return;
             }
 
+            if (result instanceof ExpressionStatement) {
+                Expression  expression = ((ExpressionStatement) result).astExpression();
+                if (expression instanceof BinaryExpression) {
+                    Expression left = ((BinaryExpression) expression).astLeft();
+                    String fullTypeName = context.getType(left).getName();
+                    checkCore2(context, result, fullTypeName);
+                }
+            }
         }
         // else --> lint本身已经检测
+    }
+
+    private void checkCore2(JavaContext context, Node node, String fullTypeName) {
+        final Pattern p = Pattern.compile(".*<(.*),(.*)>");
+        Matcher m = p.matcher(fullTypeName);
+        if (m.find()) {
+            String typeName = m.group(1).trim();
+            String valueType = m.group(2).trim();
+            int minSdk = context.getMainProject().getMinSdk();
+            if (typeName.equals(INTEGER) || typeName.equals(BYTE)) {
+                if (valueType.equals(INTEGER)) {
+                    context.report(ISSUE, node, context.getLocation(node),
+                            "Use new SparseIntArray(...) instead for better performance");
+                } else if (valueType.equals(LONG) && minSdk >= 18) {
+                    context.report(ISSUE, node, context.getLocation(node),
+                            "Use new SparseLongArray(...) instead for better performance");
+                } else if (valueType.equals(BOOLEAN)) {
+                    context.report(ISSUE, node, context.getLocation(node),
+                            "Use new SparseBooleanArray(...) instead for better performance");
+                } else {
+                    context.report(ISSUE, node, context.getLocation(node),
+                            String.format(
+                                    "Use new SparseArray<%1$s>(...) instead for better performance",
+                                    valueType));
+                }
+            } else if (typeName.equals(LONG) && (minSdk >= 16 ||
+                    Boolean.TRUE == context.getMainProject().dependsOn(
+                            SdkConstants.SUPPORT_LIB_ARTIFACT))) {
+                boolean useBuiltin = minSdk >= 16;
+                String message = useBuiltin ?
+                        "Use new LongSparseArray(...) instead for better performance" :
+                        "Use new android.support.v4.util.LongSparseArray(...) instead for better performance";
+                context.report(ISSUE, node, context.getLocation(node),
+                        message);
+            }
+        }
     }
 
     /**
@@ -123,18 +173,18 @@ public class HashMapForJDK7Detector extends Detector implements Detector.JavaSca
                 String valueType = types.last().getTypeName();
                 if (valueType.equals(INTEGER)) {
                     context.report(ISSUE, node, context.getLocation(node),
-                                   "Use new SparseIntArray(...) instead for better performance");
+                            "Use new SparseIntArray(...) instead for better performance");
                 } else if (valueType.equals(LONG) && minSdk >= 18) {
                     context.report(ISSUE, node, context.getLocation(node),
-                                   "Use new SparseLongArray(...) instead for better performance");
+                            "Use new SparseLongArray(...) instead for better performance");
                 } else if (valueType.equals(BOOLEAN)) {
                     context.report(ISSUE, node, context.getLocation(node),
-                                   "Use new SparseBooleanArray(...) instead for better performance");
+                            "Use new SparseBooleanArray(...) instead for better performance");
                 } else {
                     context.report(ISSUE, node, context.getLocation(node),
-                                   String.format(
-                                           "Use new SparseArray<%1$s>(...) instead for better performance",
-                                           valueType));
+                            String.format(
+                                    "Use new SparseArray<%1$s>(...) instead for better performance",
+                                    valueType));
                 }
             } else if (typeName.equals(LONG) && (minSdk >= 16 ||
                     Boolean.TRUE == context.getMainProject().dependsOn(
@@ -144,7 +194,7 @@ public class HashMapForJDK7Detector extends Detector implements Detector.JavaSca
                         "Use new LongSparseArray(...) instead for better performance" :
                         "Use new android.support.v4.util.LongSparseArray(...) instead for better performance";
                 context.report(ISSUE, node, context.getLocation(node),
-                               message);
+                        message);
             }
         }
     }
