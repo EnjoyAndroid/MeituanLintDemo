@@ -1,7 +1,6 @@
 package com.meituan.android.lint
-import com.android.build.gradle.AppExtension
+
 import com.android.build.gradle.AppPlugin
-import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.dsl.LintOptions
@@ -26,26 +25,33 @@ class MTLintPlugin implements Plugin<Project> {
     private static DomainObjectCollection<BaseVariant> getAndroidVariants(Project project) {
 
         if (project.getPlugins().hasPlugin(AppPlugin)) {
-            return (DomainObjectCollection<BaseVariant>) ((AppExtension) ((AppPlugin) project.getPlugins().getPlugin(AppPlugin)).extension).applicationVariants
+            return project.getPlugins().getPlugin(AppPlugin).extension.applicationVariants
         }
 
         if (project.getPlugins().hasPlugin(LibraryPlugin)) {
-            return (DomainObjectCollection<BaseVariant>) ((LibraryExtension) ((LibraryPlugin) project.getPlugins().getPlugin(LibraryPlugin)).extension).libraryVariants
+            return project.getPlugins().getPlugin(LibraryPlugin).extension.libraryVariants
         }
 
         throw new ProjectConfigurationException(sPluginMisConfiguredErrorMessage, null)
     }
 
     private void applyTask(Project project, DomainObjectCollection<BaseVariant> variants) {
-
         project.dependencies {
-            compile 'com.czt.mtlint:lint:latest.integration'
-        }
 
+            if(project.getPlugins().hasPlugin('com.android.application')){
+                compile('com.meituan.android.lint:lint:latest.release') {
+                    force = true;
+                }
+            } else {
+                provided('com.meituan.android.lint:lint:latest.release') {
+                    force = true;
+                }
+            }
+
+        }
         project.configurations.all {
             resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
         }
-
 
         def archonTaskExists = false
 

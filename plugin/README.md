@@ -8,7 +8,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.czt.mtlint:plugin:latest.integration'
+        classpath 'com.czt.mtlint:plugin:latest.release'
     }
 }
 ```
